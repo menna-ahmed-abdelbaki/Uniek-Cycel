@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>عجلة الاختيار العشوائي</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-gold: #d97706;
+            --accent-green: #059669;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --reel-bg: #0f172a;
+            --border-color: #334155;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .wheels-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 900px;
+            width: 100%;
+            margin-bottom: 2rem;
+        }
+
+        .wheel-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            flex: 1;
+            min-width: 280px;
+            max-width: 380px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        .wheel-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 1.2rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* التصميم الرأسي للاسطوانة */
+        .vertical-reel-window {
+            position: relative;
+            width: 100%;
+            height: 140px;
+            background: var(--reel-bg);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.8);
+        }
+
+        /* تأثير الظل العلوي والسفلي لمنح مظهر ثلاثي الأبعاد */
+        .vertical-reel-window::before,
+        .vertical-reel-window::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 45px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .vertical-reel-window::before {
+            top: 0;
+            background: linear-gradient(to bottom, rgba(15, 23, 42, 0.95), transparent);
+        }
+
+        .vertical-reel-window::after {
+            bottom: 0;
+            background: linear-gradient(to top, rgba(15, 23, 42, 0.95), transparent);
+        }
+
+        /* مؤشر الاختيار في المنتصف */
+        .selection-indicator {
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 46px;
+            transform: translateY(-50%);
+            border-top: 2px solid rgba(255, 255, 255, 0.15);
+            border-bottom: 2px solid rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.03);
+            z-index: 1;
+            pointer-events: none;
+            border-radius: 4px;
+        }
+
+        .reel-track {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 3.5s cubic-bezier(0.15, 0.88, 0.15, 0.98);
+        }
+
+        .reel-item {
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            width: 100%;
+            user-select: none;
+        }
+
+        .reel-item.selected {
+            color: #ffffff;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .btn {
+            margin-top: 1.5rem;
+            width: 100%;
+            padding: 0.85rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+
+        .btn-gold {
+            background-color: var(--accent-gold);
+        }
+        .btn-gold:hover:not(:disabled) {
+            background-color: #b45309;
+        }
+
+        .btn-green {
+            background-color: var(--accent-green);
+        }
+        .btn-green:hover:not(:disabled) {
+            background-color: #047857;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            margin-top: 1.2rem;
+            font-size: 1rem;
+            min-height: 24px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .result-box span {
+            color: #ffffff;
+            font-weight: 700;
+        }
+
+        /* دليل رفع الموقع */
+        .hosting-guide {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 800px;
+            width: 100%;
+            margin-top: 1.5rem;
+        }
+
+        .hosting-guide h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--accent-gold);
+        }
+
+        .hosting-guide ol {
+            padding-right: 1.2rem;
+            color: var(--text-muted);
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .hosting-guide li strong {
+            color: var(--text-main);
+        }
+
+        .hosting-guide code {
+            background: var(--reel-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #38bdf8;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>العجلة العشوائية الرأسية</h1>
+        <p>اختيار عشوائي للأرقام والمواد بتصميم سيمبل وأنيق</p>
+    </header>
+
+    <div class="wheels-container">
+        <!-- العجلة الأولى: الأرقام -->
+        <div class="wheel-card">
+            <h2>🔢 ساعات المذاكرة (1 - 9)</h2>
+            <div class="vertical-reel-window">
+                <div class="selection-indicator"></div>
+                <div class="reel-track" id="numbersTrack"></div>
+            </div>
+            <button class="btn btn-gold" id="spinNumBtn" onclick="spinNumbers()">تدوير عجلة الأرقام</button>
+            <div class="result-box" id="numResult">اضغط للتدوير</div>
+        </div>
+
+        <!-- العجلة الثانية: المواد -->
+        <div class="wheel-card">
+            <h2>📚 عجلة المواد (6 مواد)</h2>
+            <div class="vertical-reel-window">
+                <div class="selection-indicator"></div>
+                <div class="reel-track" id="subjectsTrack"></div>
+            </div>
+            <button class="btn btn-green" id="spinSubBtn" onclick="spinSubjects()">تدوير عجلة المواد</button>
+            <div class="result-box" id="subResult">اضغط للتدوير</div>
+        </div>
+    </div>
+
+    <!-- قسم شرح طريقة الرفع أونلاين -->
+    <div class="hosting-guide">
+        <h3>🌐 لعل الله يحدث بعد ذلك امرا </h3>
+        <h4> make with manona >_< </h4>
+        <!-- <ol>
+            <li>احفظي الكود ده في ملف باسم <code>index.html</code> على جهازك.</li>
+            <li>افتحي موقع <strong>Netlify Drop</strong> (ابحثي عن <code>app.netlify.com/drop</code> في المتصفح).</li>
+            <li>اسحبي ملف <code>index.html</code> ورقّطيه (Drag & Drop) داخل مربع الموقع.</li>
+            <li>خلال ثوانٍ، سيتم إنشاء رابط أونلاين خاص بموقعك وتقدر تشاركيه وتفتحي من أي جهاز أو موبايل.</li>
+        </ol> -->
+    </div>
+
+    <script>
+        // ==========================================
+        // تعديل البيانات
+        // ==========================================
+        
+        // الأرقام من 1 إلى 9
+        const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+        // يمكنك تغيير أسماء المواد الـ 6 هنا بسهولة:
+        const subjects = [
+            "(Programming 1)",
+            "(Statistic)",
+            "(Networking)",
+            "(System Analysis)",
+            "(Archicture)",
+            "(Software Enginnering)"
+        ];
+
+        const ITEM_HEIGHT = 46; // ارتفاع كل عنصر بالبكسل
+
+        // ==========================================
+        // تهيئة السلاسل الرأسية (Reels Initialization)
+        // ==========================================
+        function initReel(trackId, itemsArray) {
+            const track = document.getElementById(trackId);
+            track.innerHTML = '';
+            
+            // تكرار القائمة عدة مرات لإعطاء تأثير الدوران اللانهائي
+            const repeatedList = [...itemsArray, ...itemsArray, ...itemsArray, ...itemsArray, ...itemsArray, ...itemsArray, ...itemsArray, ...itemsArray];
+            
+            repeatedList.forEach((item) => {
+                const div = document.createElement('div');
+                div.className = 'reel-item';
+                div.textContent = item;
+                track.appendChild(div);
+            });
+
+            // ضبط الموقع الابتدائي في المنتصف
+            const initialOffset = (ITEM_HEIGHT * 47) - (140 / 2) + (ITEM_HEIGHT / 2);
+            // لضبط المحاذاة مع المؤشر
+            track.style.transform = `translateY(-${ITEM_HEIGHT - 47}px)`;
+        }
+
+        // ==========================================
+        // منطق الدوران للعجلة الأولى (الأرقام)
+        // ==========================================
+        let isNumSpinning = false;
+        function spinNumbers() {
+            if (isNumSpinning) return;
+            isNumSpinning = true;
+
+            const btn = document.getElementById('spinNumBtn');
+            const resultBox = document.getElementById('numResult');
+            const track = document.getElementById('numbersTrack');
+
+            btn.disabled = true;
+            resultBox.textContent = "جاري التدوير...";
+
+            // اختيار عنصر عشوائي
+            const randomIndex = Math.floor(Math.random() * numbers.length);
+            const selectedValue = numbers[randomIndex];
+
+            // حساب مسافة التدوير (دوران عدة دورات كاملة ثم التوقف عند العنصر)
+            const baseRounds = 5; 
+            const totalIndex = (baseRounds * numbers.length) + randomIndex;
+            
+            // حساب الإزاحة المحاذية للمؤشر في المنتصف
+            const containerHeight = 140;
+            const targetY = (totalIndex * ITEM_HEIGHT) - (containerHeight / 2) + (ITEM_HEIGHT / 2);
+
+            track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.88, 0.15, 0.98)';
+            track.style.transform = `translateY(-${targetY}px)`;
+
+            setTimeout(() => {
+                resultBox.innerHTML = `ساعات المذاكرة: <span>${selectedValue}</span>`;
+                btn.disabled = false;
+                isNumSpinning = false;
+            }, 3500);
+        }
+
+        // ==========================================
+        // منطق الدوران للعجلة الثانية (المواد)
+        // ==========================================
+        let isSubSpinning = false;
+        function spinSubjects() {
+            if (isSubSpinning) return;
+            isSubSpinning = true;
+
+            const btn = document.getElementById('spinSubBtn');
+            const resultBox = document.getElementById('subResult');
+            const track = document.getElementById('subjectsTrack');
+
+            btn.disabled = true;
+            resultBox.textContent = "جاري التدوير...";
+
+            // اختيار مادة عشوائية
+            const randomIndex = Math.floor(Math.random() * subjects.length);
+            const selectedValue = subjects[randomIndex];
+
+            // حساب مسافة التدوير
+            const baseRounds = 6;
+            const totalIndex = (baseRounds * subjects.length) + randomIndex;
+            
+            const containerHeight = 140;
+            const targetY = (totalIndex * ITEM_HEIGHT) - (containerHeight / 2) + (ITEM_HEIGHT / 2);
+
+            track.style.transition = 'transform 3.5s cubic-bezier(0.15, 0.88, 0.15, 0.98)';
+            track.style.transform = `translateY(-${targetY}px)`;
+
+            setTimeout(() => {
+                resultBox.innerHTML = `المادة المختارة: <span>${selectedValue}</span>`;
+                btn.disabled = false;
+                isSubSpinning = false;
+            }, 3500);
+        }
+
+        // تشغيل التهيئة عند فتح الصفحة
+        window.onload = () => {
+            initReel('numbersTrack', numbers);
+            initReel('subjectsTrack', subjects);
+        };
+    </script>
+</body>
+</html>
